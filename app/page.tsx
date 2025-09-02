@@ -1,4 +1,4 @@
-
+// vibe-check/app/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 interface Vibe {
   id: string;
-  name: string;
+  name: string; // Will now include emojis, e.g., "Good Vibes ✨"
   count: number;
 }
 
@@ -19,16 +19,17 @@ export default function Home() {
   const calculateOverallVibe = useCallback((counts: Vibe[]) => {
     if (!counts.length) return 'No vibes yet!';
 
-    const goodVibes = counts.find(v => v.name === 'Good Vibes 😁🎉')?.count || 0;
-    const neutralVibes = counts.find(v => v.name === 'Neutral Vibes 😐🦥')?.count || 0;
-    const badVibes = counts.find(v => v.name === 'Bad Vibes 🙁☠️')?.count || 0;
+    // Find vibes based on their base name (using .includes() for flexibility with emojis)
+    const goodVibes = counts.find(v => v.name.includes('Good Vibes 😁🎉'))?.count || 0;
+    const neutralVibes = counts.find(v => v.name.includes('Neutral Vibes 😐🦥'))?.count || 0;
+    const badVibes = counts.find(v => v.name.includes('Bad Vibes 🙁☠️'))?.count || 0;
 
     const totalVotes = goodVibes + neutralVibes + badVibes;
 
     if (totalVotes === 0) return 'No votes yet!';
 
     const goodPercentage = (goodVibes / totalVotes) * 100;
-    const badPercentage = (badVibes / totalVotes) * 100;``
+    const badPercentage = (badVibes / totalVotes) * 100;
 
     if (goodPercentage > 60) {
       return '✨ Pure Good Vibes! ✨';
@@ -63,8 +64,7 @@ export default function Home() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'vibe_counts' },
-        (payload) => {
-          // A simple re-fetch is easiest for full updates, or implement diffing
+        (_payload) => { // FIX: Renamed 'payload' to '_payload' to mark as unused
           supabase.from('vibe_counts').select('*').then(({ data, error }) => {
             if (error) console.error('Error re-fetching vibes:', error);
             else {
@@ -97,7 +97,8 @@ export default function Home() {
       } else {
         const data = await response.json();
         if (data.censored) {
-          alert(`WOMP! WOMP! Your "${vibeName}" w censored. That's what you get for ruining the vibes.`);
+          // FIX: Changed single quotes in alert string
+          alert(`Your vote for "${vibeName}" was recorded, but policy prevented it from impacting the public counter. (Check console for server message)`);
         }
       }
     } catch (error) {
@@ -115,7 +116,7 @@ export default function Home() {
 
   return (
     <div className="app-container">
-
+      {/* Background blobs for aesthetic */}
       <div className="bg-blob"></div>
       <div className="bg-blob"></div>
       <div className="bg-blob"></div>
@@ -154,9 +155,9 @@ export default function Home() {
 
       <footer className="app-footer">
         <p>
-          <span className="footer-note-title">Note on Centralization:</span> If 'Bad Vibes' votes aren't
-          changing the counter, it's not a bug. It's a feature demonstrating how a central authority (this app's backend)
-          can control and censor information in Web2 environments by changing a configuration in real-time.
+          <span className="footer-note-title">Note on Centralization:</span> {'If \'Bad Vibes\' votes aren\'t'}
+          {' changing the counter, it\'s not a bug. It\'s a feature demonstrating how a central authority (this app\'s backend)'}
+          {' can control and censor information in Web2 environments by changing a configuration in real-time.'}
         </p>
         <p className="text-xs">
           (For the presenter: Access the admin panel at <a href="/admin" className="footer-admin-link">/admin</a> to toggle censorship.)

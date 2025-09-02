@@ -21,19 +21,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { data: _, error } = await supabaseAdmin // FIX: Renamed 'data' to '_' to mark as unused
       .from('app_settings')
       .update({ value: newState })
       .eq('key', 'censor_bad_vibes');
 
     if (error) {
-      console.error('Error updating censorship setting in DB:', error); // More specific log
+      console.error('Error updating censorship setting in DB:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, newState }, { status: 200 });
-  } catch (error: any) {
-    console.error('Unhandled error toggling censorship:', error); // More specific log
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) { // FIX: Changed 'any' to 'unknown'
+    let errorMessage = 'An unknown error occurred.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.error('Unhandled error toggling censorship:', errorMessage, error);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

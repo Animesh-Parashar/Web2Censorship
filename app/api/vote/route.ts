@@ -18,11 +18,9 @@ export async function POST(request: Request) {
 
   if (settingsError) {
     console.error('Error fetching censorship setting for vote:', settingsError);
+    console.error('Supabase error object:', settingsError);
   }
 
-  // To check if 'Bad Vibes' specifically is being censored.
-  // Note: the `vibeName` sent from the frontend will now include the emoji,
-  // e.g., "Bad Vibes 💀". We need to check for the base name.
   const isBadVibesVote = vibeName.includes('Bad Vibes');
   const CENSOR_BAD_VIBES_ACTIVE = settingsData?.value === true;
 
@@ -36,8 +34,6 @@ export async function POST(request: Request) {
   // MARK END: DYNAMIC CENSORSHIP LOGIC
 
   try {
-    // We send the full vibeName (e.g., "Good Vibes ✨") to the RPC function.
-    // Ensure the RPC updates the row that EXACTLY matches this name.
     const { data, error } = await supabase
       .rpc('increment_vibe_count', { vibe_name: vibeName });
 
@@ -47,8 +43,12 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, data }, { status: 200 });
-  } catch (error: any) {
-    console.error('Unhandled error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) { // FIX: Changed 'any' to 'unknown'
+    let errorMessage = 'An unknown error occurred.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.error('Unhandled error:', errorMessage, error);
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
