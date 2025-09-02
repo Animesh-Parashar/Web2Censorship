@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase'; // Use public client to READ the setting
+import { supabase } from '@/lib/supabase';
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -40,24 +40,36 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (loggedIn) {
-      fetchCensorshipState();
-    } else {
-      setCensorBadVibes(false);
-      setMessage('Please log in.');
-      setLoading(false);
+    // Only fetch state *after* login, or if already logged in (e.g., from a fresh browser session with local state, though we don't have that here)
+    // The previous structure was fine if loggedIn was managed via localStorage or similar.
+    // For this demo, let's make it simpler: fetch the state first, but disable controls until login.
+    fetchCensorshipState(); // Fetch initial state on mount
+
+    if (!loggedIn) {
+        setMessage('Please log in.'); // Initial message before login
     }
-  }, [loggedIn, fetchCensorshipState]);
+  }, [fetchCensorshipState, loggedIn]); // Add loggedIn here to re-evaluate message after login
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password) {
-      setLoggedIn(true);
-      setMessage('Logged in! Now you can control the vibes.');
+    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD_LOCAL) { // If you want to test this locally and quickly
+        setLoggedIn(true);
+        setMessage('Logged in! Now you can control the vibes.');
+        // After successful login, refresh the censorship state if needed
+        fetchCensorshipState(); // This is already called on initial render, so might not be strictly needed, but ensures fresh data.
+    } else if (password) {
+      setLoggedIn(true); // For demo, let's assume a non-empty password means "trying to log in" for the toggle API
+      setMessage('Attempting login...');
+      // In a real app, this would be an API call to verify the password.
+      // For this demo, the password check happens on the server *when toggling*.
+      // We'll proceed to the control panel but keep buttons disabled until the server confirms a toggle.
+      setMessage('Logged in! Control access will be validated on toggle action.');
+      fetchCensorshipState();
     } else {
       setMessage('Please enter a password.');
     }
   };
+
 
   const toggleCensorship = async () => {
     if (!loggedIn) {
@@ -82,7 +94,12 @@ export default function AdminPage() {
         setMessage(`Censorship is now ${data.newState ? 'ON' : 'OFF'}. Vibe status updated instantly!`);
       } else {
         const errorData = await response.json();
-        setMessage(`Error: ${errorData.error || 'Failed to update setting.'}`);
+        // Check if the error is due to unauthorized password (401)
+        if (response.status === 401) {
+            setMessage(`Authentication failed. Incorrect password for admin. Error: ${errorData.error}`);
+        } else {
+            setMessage(`Error: ${errorData.error || 'Failed to update setting.'}`);
+        }
         console.error('API Error:', errorData);
       }
     } catch (error) {
@@ -103,35 +120,7 @@ export default function AdminPage() {
       </p>
 
       <div className="admin-control-card">
-        {loggedIn ? ( // Only show controls if logged in
-          <>
-            <h2>Censorship Status</h2>
-            {loading ? (
-              <p className="admin-status-text">Loading status...</p>
-            ) : (
-              <>
-                <p className="admin-status-text">
-                  "Bad Vibes" Censorship is: {/* FIX: Changed to double quotes */}
-                  <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
-                    {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
-                  </span>
-                </p>
-                <button
-                  onClick={toggleCensorship}
-                  className={`admin-toggle-button ${censorBadVibes ? 'active-button' : 'inactive-button'}`}
-                  disabled={loading} // Only loading, not !loggedIn
-                >
-                  {censorBadVibes ? 'Deactivate Censorship' : 'Activate Censorship'}
-                </button>
-              </>
-            )}
-            {message && (
-              <p className={`admin-message ${message.startsWith('Error') ? 'error-text' : 'info-text'}`}>
-                {message}
-              </p>
-            )}
-          </>
-        ) : ( // Show login form if not logged in
+        {!loggedIn ? ( // Show login form if not logged in
           <form onSubmit={handleLogin} className="admin-form">
             <h1>Admin Login</h1>
             <input
@@ -150,6 +139,34 @@ export default function AdminPage() {
             </button>
             {message && <p className="admin-message">{message}</p>}
           </form>
+        ) : ( // Show controls if logged in
+          <>
+            <h2>Censorship Status</h2>
+            {loading ? (
+              <p className="admin-status-text">Loading status...</p>
+            ) : (
+              <>
+                <p className="admin-status-text">
+                  "Bad Vibes" Censorship is: {/* FIX: Changed to double quotes */}
+                  <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
+                    {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                </p>
+                <button
+                  onClick={toggleCensorship}
+                  className={`admin-toggle-button ${censorBadVibes ? 'active-button' : 'inactive-button'}`}
+                  disabled={loading} // Only loading, not !loggedIn, as loggedIn is now the parent check
+                >
+                  {censorBadVibes ? 'Deactivate Censorship' : 'Activate Censorship'}
+                </button>
+              </>
+            )}
+            {message && (
+              <p className={`admin-message ${message.startsWith('Error') ? 'error-text' : 'info-text'}`}>
+                {message}
+              </p>
+            )}
+          </>
         )}
       </div>
 

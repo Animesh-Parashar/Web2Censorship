@@ -21,7 +21,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { data: _, error } = await supabaseAdmin // FIX: Renamed 'data' to '_' to mark as unused
+    // FIX: Removed `data: _` as it's not strictly needed here and caused unused-vars warning
+    const { error } = await supabaseAdmin
       .from('app_settings')
       .update({ value: newState })
       .eq('key', 'censor_bad_vibes');
@@ -31,8 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // No `data` to return, but still successful.
     return NextResponse.json({ success: true, newState }, { status: 200 });
-  } catch (error: unknown) { // FIX: Changed 'any' to 'unknown'
+  } catch (error: unknown) {
     let errorMessage = 'An unknown error occurred.';
     if (error instanceof Error) {
       errorMessage = error.message;

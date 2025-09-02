@@ -61,6 +61,8 @@ export default function Home() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'vibe_counts' },
+        // FIX: Explicitly disable eslint for this line if _payload isn't enough
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_payload) => {
           supabase.from('vibe_counts').select('*').then(({ data, error }) => {
             if (error) console.error('Error re-fetching vibes:', error);
@@ -93,7 +95,7 @@ export default function Home() {
       } else {
         const data = await response.json();
         if (data.censored) {
-          alert(`Your vote for "${vibeName}" was recorded, but policy prevented it from impacting the public counter. (Check console for server message)`);
+          alert(`WOMP! WOMP! your Vote for "${vibeName}" was censored, That is what you get for ruining the vibe`);
         }
       }
     } catch (error) {
@@ -150,9 +152,9 @@ export default function Home() {
 
       <footer className="app-footer">
         <p>
-          <span className="footer-note-title">Note on Centralization:</span> {'If \'Bad Vibes\' votes aren\'t'}
-          {' changing the counter, it\'s not a bug. It\'s a feature demonstrating how a central authority (this app\'s backend)'}
-          {' can control and censor information in Web2 environments by changing a configuration in real-time.'}
+          <span className="footer-note-title">Note on Centralization:</span> If &apos;Bad Vibes&apos; votes aren&apos;t {/* FIX: escaped apostrophes */}
+          changing the counter, it&apos;s not a bug. It&apos;s a feature demonstrating how a central authority (this app&apos;s backend) {/* FIX: escaped apostrophes */}
+          can control and censor information in Web2 environments by changing a configuration in real-time.
         </p>
         <p className="text-xs">
           (For the presenter: Access the admin panel at <a href="/admin" className="footer-admin-link">/admin</a> to toggle censorship.)
