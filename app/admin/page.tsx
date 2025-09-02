@@ -11,7 +11,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // Fetch current censorship state from Supabase
   const fetchCensorshipState = useCallback(async () => {
     setLoading(true);
     setMessage('Fetching current censorship status...');
@@ -28,28 +27,27 @@ export default function AdminPage() {
 
       if (error.code === 'PGRST116' && error.details === 'The result contains 0 rows') {
         setMessage("Censorship setting not found in app_settings. Defaulting to INACTIVE. Please ensure a row with key='censor_bad_vibes' exists and RLS is disabled for 'app_settings'.");
-        setCensorBadVibes(false); // Default to inactive if the row doesn't exist
+        setCensorBadVibes(false);
       } else {
         setMessage(`Failed to fetch current setting: ${error.message || 'Unknown error'}. Check Supabase settings/RLS for 'app_settings'.`);
         setCensorBadVibes(false);
       }
     } else {
       setCensorBadVibes(data?.value || false);
-      setMessage(''); // Clear message on success
+      setMessage('');
     }
     setLoading(false);
   }, []);
 
-  // Effect to fetch state on component mount (and on loggedIn change)
   useEffect(() => {
-    if (loggedIn) { // Only fetch state once logged in
+    if (loggedIn) {
       fetchCensorshipState();
-    } else { // If logged out, reset state and message
+    } else {
       setCensorBadVibes(false);
       setMessage('Please log in.');
-      setLoading(false); // Ensure loading is false to show login form
+      setLoading(false);
     }
-  }, [loggedIn, fetchCensorshipState]); // Depend on loggedIn state
+  }, [loggedIn, fetchCensorshipState]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,31 +93,6 @@ export default function AdminPage() {
     }
   };
 
-  if (!loggedIn) {
-    return (
-      <div className="admin-container">
-        <form onSubmit={handleLogin} className="admin-form">
-          <h1>Admin Login</h1>
-          <input
-            type="password"
-            placeholder="Admin Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="admin-input"
-            required
-          />
-          <button
-            type="submit"
-            className="admin-login-button"
-          >
-            Login
-          </button>
-          {message && <p className="admin-message">{message}</p>}
-        </form>
-      </div>
-    );
-  }
-
   return (
     <div className="admin-container">
       <h1 className="app-title">
@@ -130,35 +103,58 @@ export default function AdminPage() {
       </p>
 
       <div className="admin-control-card">
-        <h2>Censorship Status</h2>
-        {loading ? (
-          <p className="admin-status-text">Loading status...</p>
-        ) : (
+        {loggedIn ? ( // Only show controls if logged in
           <>
-            <p className="admin-status-text">
-              {'\'Bad Vibes\' Censorship is:'} {/* FIX: Escaped quotes */}
-              <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
-                {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
-              </span>
-            </p>
-            <button
-              onClick={toggleCensorship}
-              className={`admin-toggle-button ${censorBadVibes ? 'active-button' : 'inactive-button'}`}
-              disabled={loading || !loggedIn}
-            >
-              {censorBadVibes ? 'Deactivate Censorship' : 'Activate Censorship'}
-            </button>
+            <h2>Censorship Status</h2>
+            {loading ? (
+              <p className="admin-status-text">Loading status...</p>
+            ) : (
+              <>
+                <p className="admin-status-text">
+                  "Bad Vibes" Censorship is: {/* FIX: Changed to double quotes */}
+                  <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
+                    {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
+                  </span>
+                </p>
+                <button
+                  onClick={toggleCensorship}
+                  className={`admin-toggle-button ${censorBadVibes ? 'active-button' : 'inactive-button'}`}
+                  disabled={loading} // Only loading, not !loggedIn
+                >
+                  {censorBadVibes ? 'Deactivate Censorship' : 'Activate Censorship'}
+                </button>
+              </>
+            )}
+            {message && (
+              <p className={`admin-message ${message.startsWith('Error') ? 'error-text' : 'info-text'}`}>
+                {message}
+              </p>
+            )}
           </>
-        )}
-        {message && (
-          <p className={`admin-message ${message.startsWith('Error') ? 'error-text' : 'info-text'}`}>
-            {message}
-          </p>
+        ) : ( // Show login form if not logged in
+          <form onSubmit={handleLogin} className="admin-form">
+            <h1>Admin Login</h1>
+            <input
+              type="password"
+              placeholder="Admin Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="admin-input"
+              required
+            />
+            <button
+              type="submit"
+              className="admin-login-button"
+            >
+              Login
+            </button>
+            {message && <p className="admin-message">{message}</p>}
+          </form>
         )}
       </div>
 
       <p className="admin-info-text">
-        {'This demonstrates how a central authority can \'change the code\' (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment.'} {/* FIX: Escaped quotes */}
+        {"This demonstrates how a central authority can 'change the code' (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment."} {/* FIX: Changed to double quotes */}
       </p>
     </div>
   );

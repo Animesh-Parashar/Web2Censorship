@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 interface Vibe {
   id: string;
-  name: string; // Will now include emojis, e.g., "Good Vibes ✨"
+  name: string;
   count: number;
 }
 
@@ -15,14 +15,12 @@ export default function Home() {
   const [overallVibe, setOverallVibe] = useState<string>('Checking the vibes...');
   const [loading, setLoading] = useState(true);
 
-  // Function to calculate overall vibe
   const calculateOverallVibe = useCallback((counts: Vibe[]) => {
     if (!counts.length) return 'No vibes yet!';
 
-    // Find vibes based on their base name (using .includes() for flexibility with emojis)
-    const goodVibes = counts.find(v => v.name.includes('Good Vibes 😁🎉'))?.count || 0;
-    const neutralVibes = counts.find(v => v.name.includes('Neutral Vibes 😐🦥'))?.count || 0;
-    const badVibes = counts.find(v => v.name.includes('Bad Vibes 🙁☠️'))?.count || 0;
+    const goodVibes = counts.find(v => v.name.includes('Good Vibes'))?.count || 0;
+    const neutralVibes = counts.find(v => v.name.includes('Neutral Vibes'))?.count || 0;
+    const badVibes = counts.find(v => v.name.includes('Bad Vibes'))?.count || 0;
 
     const totalVotes = goodVibes + neutralVibes + badVibes;
 
@@ -44,7 +42,6 @@ export default function Home() {
     }
   }, []);
 
-  // Fetch initial data and set up realtime subscription
   useEffect(() => {
     const fetchInitialVibes = async () => {
       const { data, error } = await supabase.from('vibe_counts').select('*');
@@ -64,7 +61,7 @@ export default function Home() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'vibe_counts' },
-        (_payload) => { // FIX: Renamed 'payload' to '_payload' to mark as unused
+        (_payload) => {
           supabase.from('vibe_counts').select('*').then(({ data, error }) => {
             if (error) console.error('Error re-fetching vibes:', error);
             else {
@@ -81,7 +78,6 @@ export default function Home() {
     };
   }, [calculateOverallVibe]);
 
-  // Handle vote submission
   const handleVote = async (vibeName: string) => {
     try {
       const response = await fetch('/api/vote', {
@@ -97,7 +93,6 @@ export default function Home() {
       } else {
         const data = await response.json();
         if (data.censored) {
-          // FIX: Changed single quotes in alert string
           alert(`Your vote for "${vibeName}" was recorded, but policy prevented it from impacting the public counter. (Check console for server message)`);
         }
       }
