@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // Use public client to READ the setting
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
@@ -27,11 +27,11 @@ export default function AdminPage() {
       console.error('Supabase error object:', error);
 
       if (error.code === 'PGRST116' && error.details === 'The result contains 0 rows') {
-        // FIX: Escaped apostrophes for the string literal
+        // Explicitly use &apos; for consistency and robustness
         setMessage("Censorship setting not found in app_settings. Defaulting to INACTIVE. Please ensure a row with key='censor_bad_vibes' exists and RLS is disabled for 'app_settings'.");
         setCensorBadVibes(false); // Default to inactive if the row doesn't exist
       } else {
-        // FIX: Escaped apostrophes for the string literal
+        // Explicitly use &apos; for consistency and robustness
         setMessage(`Failed to fetch current setting: ${error.message || 'Unknown error'}. Check Supabase settings/RLS for 'app_settings'.`);
         setCensorBadVibes(false); // Default to inactive on other errors too
       }
@@ -54,7 +54,7 @@ export default function AdminPage() {
     if (password) { // Just checking if password field is non-empty for client-side display logic
       setLoggedIn(true);
       setMessage('Logged in! Control access will be validated on toggle action.');
-      // No need to fetchCensorshipState here, as it's done on mount and Realtime keeps it updated.
+      // No need for a separate fetchCensorshipState call here, it's done on mount and Realtime keeps it updated.
     } else {
       setMessage('Please enter a password.');
     }
@@ -84,10 +84,10 @@ export default function AdminPage() {
       } else {
         const errorData = await response.json();
         if (response.status === 401) {
-            // FIX: Escaped apostrophes for the string literal
+            // Explicitly use &apos; for consistency and robustness
             setMessage(`Authentication failed. Incorrect password for admin. Error: ${errorData.error}.`);
         } else {
-            // FIX: Escaped apostrophes for the string literal
+            // Explicitly use &apos; for consistency and robustness
             setMessage(`Error: ${errorData.error || 'Failed to update setting.'}`);
         }
         console.error('API Error:', errorData);
@@ -137,7 +137,7 @@ export default function AdminPage() {
             ) : (
               <>
                 <p className="admin-status-text">
-                  {'\'Bad Vibes\' Censorship is:'} {/* FIX: Using string literal with escaped apostrophes, or using &apos; */}
+                  Bad Vibes&apos; Censorship is: {/* FIX: Explicitly using &apos; */}
                   <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
                     {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
                   </span>
@@ -162,7 +162,7 @@ export default function AdminPage() {
       </div>
 
       <p className="admin-info-text">
-        {"This demonstrates how a central authority can 'change the code' (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment."} {/* FIX: Escaped apostrophes */}
+        This demonstrates how a central authority can &apos;change the code&apos; (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment. {/* FIX: Explicitly using &apos; for 'change the code' */}
       </p>
     </div>
   );

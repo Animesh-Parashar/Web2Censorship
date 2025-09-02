@@ -157,7 +157,7 @@ export default function Home() {
           can control and censor information in Web2 environments by changing a configuration in real-time.
         </p>
         <p className="text-xs">
-          (For the presenter: Access the admin panel at <a href="/admin" className="footer-admin-link">/admin</a> to toggle censorship.)
+          (Access the admin panel at <a href="/admin" className="footer-admin-link">/admin</a> to toggle censorship.)
         </p>
       </footer>
     </div>
