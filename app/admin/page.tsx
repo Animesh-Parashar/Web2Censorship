@@ -106,7 +106,7 @@ export default function AdminPage() {
         Vibe Check Admin Control
       </h1>
       <p className="app-subtitle">
-        Toggle the "Bad Vibes" censorship. This demonstrates the power of a central authority to instantly modify platform behavior.
+        Toggle the Bad Vibes censorship. This demonstrates the power of a central authority to instantly modify platform behavior.
       </p>
 
       <div className="admin-control-card">
