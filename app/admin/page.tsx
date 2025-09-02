@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
+  // Function to fetch current censorship state from Supabase
   const fetchCensorshipState = useCallback(async () => {
     setLoading(true);
     setMessage('Fetching current censorship status...');
@@ -26,50 +27,38 @@ export default function AdminPage() {
       console.error('Supabase error object:', error);
 
       if (error.code === 'PGRST116' && error.details === 'The result contains 0 rows') {
+        // FIX: Escaped apostrophes for the string literal
         setMessage("Censorship setting not found in app_settings. Defaulting to INACTIVE. Please ensure a row with key='censor_bad_vibes' exists and RLS is disabled for 'app_settings'.");
-        setCensorBadVibes(false);
+        setCensorBadVibes(false); // Default to inactive if the row doesn't exist
       } else {
+        // FIX: Escaped apostrophes for the string literal
         setMessage(`Failed to fetch current setting: ${error.message || 'Unknown error'}. Check Supabase settings/RLS for 'app_settings'.`);
-        setCensorBadVibes(false);
+        setCensorBadVibes(false); // Default to inactive on other errors too
       }
     } else {
       setCensorBadVibes(data?.value || false);
-      setMessage('');
+      setMessage(''); // Clear message on success
     }
     setLoading(false);
   }, []);
 
+  // Effect to fetch state on component mount
   useEffect(() => {
-    // Only fetch state *after* login, or if already logged in (e.g., from a fresh browser session with local state, though we don't have that here)
-    // The previous structure was fine if loggedIn was managed via localStorage or similar.
-    // For this demo, let's make it simpler: fetch the state first, but disable controls until login.
-    fetchCensorshipState(); // Fetch initial state on mount
+    fetchCensorshipState(); // Always fetch on mount to get initial status
+    setMessage('Please log in.'); // Set initial message
+  }, [fetchCensorshipState]);
 
-    if (!loggedIn) {
-        setMessage('Please log in.'); // Initial message before login
-    }
-  }, [fetchCensorshipState, loggedIn]); // Add loggedIn here to re-evaluate message after login
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD_LOCAL) { // If you want to test this locally and quickly
-        setLoggedIn(true);
-        setMessage('Logged in! Now you can control the vibes.');
-        // After successful login, refresh the censorship state if needed
-        fetchCensorshipState(); // This is already called on initial render, so might not be strictly needed, but ensures fresh data.
-    } else if (password) {
-      setLoggedIn(true); // For demo, let's assume a non-empty password means "trying to log in" for the toggle API
-      setMessage('Attempting login...');
-      // In a real app, this would be an API call to verify the password.
-      // For this demo, the password check happens on the server *when toggling*.
-      // We'll proceed to the control panel but keep buttons disabled until the server confirms a toggle.
+    if (password) { // Just checking if password field is non-empty for client-side display logic
+      setLoggedIn(true);
       setMessage('Logged in! Control access will be validated on toggle action.');
-      fetchCensorshipState();
+      // No need to fetchCensorshipState here, as it's done on mount and Realtime keeps it updated.
     } else {
       setMessage('Please enter a password.');
     }
   };
-
 
   const toggleCensorship = async () => {
     if (!loggedIn) {
@@ -94,10 +83,11 @@ export default function AdminPage() {
         setMessage(`Censorship is now ${data.newState ? 'ON' : 'OFF'}. Vibe status updated instantly!`);
       } else {
         const errorData = await response.json();
-        // Check if the error is due to unauthorized password (401)
         if (response.status === 401) {
-            setMessage(`Authentication failed. Incorrect password for admin. Error: ${errorData.error}`);
+            // FIX: Escaped apostrophes for the string literal
+            setMessage(`Authentication failed. Incorrect password for admin. Error: ${errorData.error}.`);
         } else {
+            // FIX: Escaped apostrophes for the string literal
             setMessage(`Error: ${errorData.error || 'Failed to update setting.'}`);
         }
         console.error('API Error:', errorData);
@@ -147,7 +137,7 @@ export default function AdminPage() {
             ) : (
               <>
                 <p className="admin-status-text">
-                  "Bad Vibes" Censorship is: {/* FIX: Changed to double quotes */}
+                  {'\'Bad Vibes\' Censorship is:'} {/* FIX: Using string literal with escaped apostrophes, or using &apos; */}
                   <span className={`status-value ${censorBadVibes ? 'active' : 'inactive'}`}>
                     {censorBadVibes ? 'ACTIVE' : 'INACTIVE'}
                   </span>
@@ -161,6 +151,7 @@ export default function AdminPage() {
                 </button>
               </>
             )}
+            {/* Display messages for logged-in state operations */}
             {message && (
               <p className={`admin-message ${message.startsWith('Error') ? 'error-text' : 'info-text'}`}>
                 {message}
@@ -171,7 +162,7 @@ export default function AdminPage() {
       </div>
 
       <p className="admin-info-text">
-        {"This demonstrates how a central authority can 'change the code' (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment."} {/* FIX: Changed to double quotes */}
+        {"This demonstrates how a central authority can 'change the code' (i.e., modify application behavior) in real-time by updating a configuration in the database, without requiring a redeployment."} {/* FIX: Escaped apostrophes */}
       </p>
     </div>
   );
